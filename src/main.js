@@ -23,6 +23,7 @@ let solverWorker;
 function createSelect(field, names, value) {
   const select = document.createElement("select");
   select.name = field;
+  select.setAttribute("aria-label", `Locked assignment ${field}`);
   const placeholder = document.createElement("option");
   placeholder.value = "";
   placeholder.textContent = `Choose ${field}`;
