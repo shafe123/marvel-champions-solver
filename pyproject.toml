@@ -1,0 +1,6 @@
+[tool.ruff]
+extend-exclude = [".venv", "dist", "node_modules"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

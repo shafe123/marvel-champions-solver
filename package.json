@@ -5,12 +5,17 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
     "test:web": "node scripts/test-worker.mjs"
   },
   "dependencies": {
     "glpk.js": "^4.0.2"
   },
   "devDependencies": {
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.9"
   }
 }
