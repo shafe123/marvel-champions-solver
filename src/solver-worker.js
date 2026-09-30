@@ -129,14 +129,15 @@ self.addEventListener("message", async ({ data }) => {
       presol: true,
       tmlim: MAXIMUM_SOLVE_TIME_SECONDS,
     });
-    if (![glpk.GLP_FEAS, glpk.GLP_OPT].includes(result.result.status)) {
+    const solution = result?.result ?? result;
+    if (!solution || ![glpk.GLP_FEAS, glpk.GLP_OPT].includes(solution.status)) {
       throw new Error(
         `No solution was found within ${MAXIMUM_SOLVE_TIME_SECONDS} seconds. Try adding heroes or aspects, or reducing the roster.`,
       );
     }
     self.postMessage({
       type: "solution",
-      assignments: decodeAssignments(data.catalog, result.result.vars),
+      assignments: decodeAssignments(data.catalog, solution.vars),
     });
   } catch (error) {
     self.postMessage({
