@@ -60,6 +60,17 @@ textarea {
 }
 textarea:focus { border-color: #f9bd40; outline: 2px solid #f9bd4055; }
 .field-help { color: #aeb6c3; font-size: .9rem; }
+.locks { border: 1px solid #455062; border-radius: .35rem; margin: 1.5rem 0; padding: 1rem; }
+.locks legend { font-weight: 800; padding: 0 .4rem; }
+#lock-rows { display: grid; gap: .7rem; margin: 1rem 0; }
+.lock-row { display: grid; gap: .7rem; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+select {
+  background: #161e28; border: 1px solid #455062; border-radius: .35rem; color: #f4f3f0;
+  font: inherit; min-width: 0; padding: .65rem;
+}
+select:focus { border-color: #f9bd40; outline: 2px solid #f9bd4055; }
+.remove-lock { background: #682b38; color: #f4f3f0; padding: .65rem .8rem; }
+.lock-badge { color: #ffd06b; font-size: .8rem; font-weight: 800; }
 
 .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
 button {
@@ -93,4 +104,5 @@ tbody th { background: #202a38; }
 @media (max-width: 720px) {
   .page-shell { padding: 2rem 1rem; }
   .catalog-grid { grid-template-columns: 1fr; }
+  .lock-row { grid-template-columns: 1fr; }
 }

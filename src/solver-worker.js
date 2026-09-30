@@ -1,4 +1,5 @@
 import GLPK from "glpk.js";
+import { validateLocks } from "./locks.js";
 
 const MAXIMUM_SOLVE_TIME_SECONDS = 30;
 let glpkPromise;
@@ -20,7 +21,27 @@ function addConstraint(model, name, variables, bounds) {
   });
 }
 
-function buildModel(catalog, glpk) {
+function shuffledIndexes(length, random) {
+  const indexes = Array.from({ length }, (_, index) => index);
+  for (let index = indexes.length - 1; index > 0; index -= 1) {
+    const selected = Math.floor(random() * (index + 1));
+    [indexes[index], indexes[selected]] = [indexes[selected], indexes[index]];
+  }
+  return indexes;
+}
+
+function seededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 0x100000000;
+  };
+}
+
+function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed } = {}) {
   const model = {
     name: "marvel-champions-assignment",
     objective: { direction: glpk.GLP_MIN, name: "objective", vars: [] },
@@ -28,67 +49,88 @@ function buildModel(catalog, glpk) {
     binaries: [],
   };
   const { players, heroes, aspects, villains } = catalog;
+  const random = randomSeed === undefined ? Math.random : seededRandom(randomSeed);
+  const indexes = (length) =>
+    randomize ? shuffledIndexes(length, random) : Array.from({ length }, (_, index) => index);
+  const villainIndexes = indexes(villains.length);
+  const playerIndexes = indexes(players.length);
+  const heroIndexes = indexes(heroes.length);
+  const aspectIndexes = indexes(aspects.length);
 
-  for (let villain = 0; villain < villains.length; villain += 1) {
-    for (let player = 0; player < players.length; player += 1) {
-      for (let hero = 0; hero < heroes.length; hero += 1) {
-        for (let aspect = 0; aspect < aspects.length; aspect += 1) {
+  for (const villain of villainIndexes) {
+    for (const player of playerIndexes) {
+      for (const hero of heroIndexes) {
+        for (const aspect of aspectIndexes) {
           model.binaries.push(variableName(villain, player, hero, aspect));
         }
       }
     }
   }
 
-  for (let villain = 0; villain < villains.length; villain += 1) {
-    for (let player = 0; player < players.length; player += 1) {
+  for (const villain of villainIndexes) {
+    for (const player of playerIndexes) {
       addConstraint(
         model,
         `assignment_${villain}_${player}`,
-        heroes.flatMap((_, hero) =>
-          aspects.map((_, aspect) => variableName(villain, player, hero, aspect)),
+        heroIndexes.flatMap((hero) =>
+          aspectIndexes.map((aspect) => variableName(villain, player, hero, aspect)),
         ),
         { type: glpk.GLP_FX, lb: 1, ub: 1 },
       );
     }
   }
 
-  for (let player = 0; player < players.length; player += 1) {
-    for (let hero = 0; hero < heroes.length; hero += 1) {
+  for (const player of playerIndexes) {
+    for (const hero of heroIndexes) {
       addConstraint(
         model,
         `player_hero_${player}_${hero}`,
-        villains.flatMap((_, villain) =>
-          aspects.map((_, aspect) => variableName(villain, player, hero, aspect)),
+        villainIndexes.flatMap((villain) =>
+          aspectIndexes.map((aspect) => variableName(villain, player, hero, aspect)),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
       );
     }
   }
 
-  for (let hero = 0; hero < heroes.length; hero += 1) {
-    for (let aspect = 0; aspect < aspects.length; aspect += 1) {
+  for (const hero of heroIndexes) {
+    for (const aspect of aspectIndexes) {
       addConstraint(
         model,
         `hero_aspect_${hero}_${aspect}`,
-        villains.flatMap((_, villain) =>
-          players.map((_, player) => variableName(villain, player, hero, aspect)),
+        villainIndexes.flatMap((villain) =>
+          playerIndexes.map((player) => variableName(villain, player, hero, aspect)),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
       );
     }
   }
 
-  for (let villain = 0; villain < villains.length; villain += 1) {
-    for (let hero = 0; hero < heroes.length; hero += 1) {
+  for (const villain of villainIndexes) {
+    for (const hero of heroIndexes) {
       addConstraint(
         model,
         `scenario_hero_${villain}_${hero}`,
-        players.flatMap((_, player) =>
-          aspects.map((_, aspect) => variableName(villain, player, hero, aspect)),
+        playerIndexes.flatMap((player) =>
+          aspectIndexes.map((aspect) => variableName(villain, player, hero, aspect)),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
       );
     }
+  }
+
+  for (const [index, lock] of locks.entries()) {
+    addConstraint(
+      model,
+      `lock_${index}`,
+      [variableName(
+        villains.indexOf(lock.villain),
+        players.indexOf(lock.player),
+        heroes.indexOf(lock.hero),
+        aspects.indexOf(lock.aspect),
+      )],
+      { type: glpk.GLP_FX, lb: 1, ub: 1 },
+    );
   }
 
   return model;
@@ -123,13 +165,22 @@ self.addEventListener("message", async ({ data }) => {
   }
 
   try {
+    const lockErrors = validateLocks(data.catalog, data.locks);
+    if (lockErrors.length > 0) {
+      throw new Error(lockErrors.join(" "));
+    }
     const glpk = await getGlpk();
-    const result = await glpk.solve(buildModel(data.catalog, glpk), {
+    const result = await glpk.solve(buildModel(data.catalog, glpk, data), {
       msglev: glpk.GLP_MSG_OFF,
       presol: true,
       tmlim: MAXIMUM_SOLVE_TIME_SECONDS,
     });
     const solution = result?.result ?? result;
+    if ([glpk.GLP_INFEAS, glpk.GLP_NOFEAS].includes(solution?.status)) {
+      throw new Error(
+        "The locked assignments and current roster cannot be completed. Change a lock, add heroes or aspects, or reduce the number of scenarios.",
+      );
+    }
     if (!solution || ![glpk.GLP_FEAS, glpk.GLP_OPT].includes(solution.status)) {
       throw new Error(
         `No solution was found within ${MAXIMUM_SOLVE_TIME_SECONDS} seconds. Try adding heroes or aspects, or reducing the roster.`,
