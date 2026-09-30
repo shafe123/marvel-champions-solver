@@ -26,6 +26,26 @@ Open `http://localhost:8000`. Run `npm run test:web` to validate the full browse
 
 The deployment workflow publishes `dist/` to GitHub Pages whenever `main` changes.
 
+## Quality checks
+
+The pull-request validation workflow enforces formatting, linting, browser tests, a static build, and Python tests. Run the same checks locally with:
+
+```bash
+npm ci
+npm run format:check
+npm run lint
+npm run test:web
+npm run build
+
+python -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/ruff format --check .
+.venv/bin/ruff check .
+.venv/bin/python -m unittest -v
+```
+
+Use `npm run format` and `.venv/bin/ruff format .` to apply the configured formatters.
+
 ## Run
 
 ```bash
@@ -39,7 +59,7 @@ The output is JSON, grouped by villain scenario and then player:
 {
   "villain": "Rhino",
   "players": {
-    "Player 1": {"hero": "Spider-Man (Peter Parker)", "aspect": "Justice"}
+    "Player 1": { "hero": "Spider-Man (Peter Parker)", "aspect": "Justice" }
   }
 }
 ```

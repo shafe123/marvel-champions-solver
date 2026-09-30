@@ -23,7 +23,10 @@ async function fingerprint(path) {
   const content = await readFile(path);
   const extension = extname(path);
   const name = path.slice(0, -extension.length);
-  const fingerprint = createHash("sha256").update(content).digest("hex").slice(0, 12);
+  const fingerprint = createHash("sha256")
+    .update(content)
+    .digest("hex")
+    .slice(0, 12);
   const fingerprintedPath = `${name}-${fingerprint}${extension}`;
   await writeFile(fingerprintedPath, content);
   await rm(path);

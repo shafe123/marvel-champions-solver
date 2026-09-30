@@ -28,7 +28,9 @@ async function solve(options = {}) {
   await messageListener({ data: { type: "solve", catalog, ...options } });
   const response = responses[initialResponses];
   if (response?.type !== "solution") {
-    throw new Error(response?.message ?? "Browser worker did not return a solution.");
+    throw new Error(
+      response?.message ?? "Browser worker did not return a solution.",
+    );
   }
   return response.assignments;
 }
@@ -51,13 +53,18 @@ function validate(assignments) {
     assignments.some(
       (assignment, index) =>
         assignment.villain !== catalog.villains[index] ||
-        JSON.stringify(Object.keys(assignment.players)) !== JSON.stringify(catalog.players),
+        JSON.stringify(Object.keys(assignment.players)) !==
+          JSON.stringify(catalog.players),
     )
   ) {
-    throw new Error("Browser worker did not preserve the displayed villain and player order.");
+    throw new Error(
+      "Browser worker did not preserve the displayed villain and player order.",
+    );
   }
 
-  const playerHeroes = new Map(catalog.players.map((player) => [player, new Set()]));
+  const playerHeroes = new Map(
+    catalog.players.map((player) => [player, new Set()]),
+  );
   const heroAspects = new Set();
   for (const assignment of assignments) {
     const scenarioHeroes = new Set();
@@ -69,7 +76,9 @@ function validate(assignments) {
         throw new Error(`${choice.hero} reused ${choice.aspect}.`);
       }
       if (scenarioHeroes.has(choice.hero)) {
-        throw new Error(`${assignment.villain} contains ${choice.hero} more than once.`);
+        throw new Error(
+          `${assignment.villain} contains ${choice.hero} more than once.`,
+        );
       }
       playerHeroes.get(player).add(choice.hero);
       heroAspects.add(`${choice.hero}\0${choice.aspect}`);
@@ -81,8 +90,13 @@ function validate(assignments) {
 const deterministicSolution = await solve();
 validate(deterministicSolution);
 const repeatedDeterministicSolution = await solve();
-if (JSON.stringify(deterministicSolution) !== JSON.stringify(repeatedDeterministicSolution)) {
-  throw new Error("Normal browser-worker generation must remain deterministic.");
+if (
+  JSON.stringify(deterministicSolution) !==
+  JSON.stringify(repeatedDeterministicSolution)
+) {
+  throw new Error(
+    "Normal browser-worker generation must remain deterministic.",
+  );
 }
 
 const randomizedSolutions = new Set();
@@ -92,7 +106,9 @@ for (const randomSeed of [1, 2, 3, 4, 5]) {
   randomizedSolutions.add(JSON.stringify(assignments));
 }
 if (randomizedSolutions.size < 2) {
-  throw new Error("Randomized browser-worker generation did not vary across fixed model orders.");
+  throw new Error(
+    "Randomized browser-worker generation did not vary across fixed model orders.",
+  );
 }
 
 const locks = [
@@ -103,10 +119,19 @@ const locks = [
     aspect: "Justice",
   },
 ];
-const partiallyLockedSolution = await solve({ locks, randomize: true, randomSeed: 6 });
+const partiallyLockedSolution = await solve({
+  locks,
+  randomize: true,
+  randomSeed: 6,
+});
 validate(partiallyLockedSolution);
-const rhino = partiallyLockedSolution.find((assignment) => assignment.villain === "Rhino");
-if (rhino.players["Player 1"].hero !== locks[0].hero || rhino.players["Player 1"].aspect !== locks[0].aspect) {
+const rhino = partiallyLockedSolution.find(
+  (assignment) => assignment.villain === "Rhino",
+);
+if (
+  rhino.players["Player 1"].hero !== locks[0].hero ||
+  rhino.players["Player 1"].aspect !== locks[0].aspect
+) {
   throw new Error("Browser worker did not preserve a valid locked assignment.");
 }
 
@@ -143,14 +168,21 @@ const conflicts = [
   },
 ];
 const conflictErrors = validateLocks(catalog, conflicts).join("\n");
-for (const expected of ["duplicate slot", "cannot reuse", "already locked for", "heroes must differ"]) {
+for (const expected of [
+  "duplicate slot",
+  "cannot reuse",
+  "already locked for",
+  "heroes must differ",
+]) {
   if (!conflictErrors.includes(expected)) {
     throw new Error(`Lock validation did not report ${expected}.`);
   }
 }
 const workerConflict = await solveFailure({ locks: conflicts.slice(0, 2) });
 if (!workerConflict.includes("duplicate slot")) {
-  throw new Error("Browser worker did not return the actionable lock conflict.");
+  throw new Error(
+    "Browser worker did not return the actionable lock conflict.",
+  );
 }
 
 const infeasibleCatalog = {
@@ -169,11 +201,18 @@ const infeasibleLockMessage = await solveFailure({
   locks: infeasibleLocks,
 });
 if (!infeasibleLockMessage.includes("cannot be completed")) {
-  throw new Error("Browser worker did not explain an infeasible lock combination.");
+  throw new Error(
+    "Browser worker did not explain an infeasible lock combination.",
+  );
 }
 
 const incompleteAndUnknownErrors = validateLocks(catalog, [
-  { villain: "Unknown villain", player: "", hero: "Spider-Man (Peter Parker)", aspect: "Justice" },
+  {
+    villain: "Unknown villain",
+    player: "",
+    hero: "Spider-Man (Peter Parker)",
+    aspect: "Justice",
+  },
 ]).join("\n");
 for (const expected of ["unknown villain scenario", "choose a player"]) {
   if (!incompleteAndUnknownErrors.includes(expected)) {

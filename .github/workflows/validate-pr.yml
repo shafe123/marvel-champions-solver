@@ -23,6 +23,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
       - run: npm run test:web
       - run: npm run build
       - uses: actions/setup-python@v5
@@ -30,5 +32,7 @@ jobs:
           python-version: "3.12"
       - run: |
           python -m venv .venv
-          .venv/bin/python -m pip install --quiet -r requirements.txt
+          .venv/bin/python -m pip install --quiet -r requirements-dev.txt
+          .venv/bin/ruff format --check .
+          .venv/bin/ruff check .
           .venv/bin/python -m unittest -v

@@ -29,7 +29,9 @@ def _read_names(data: dict[str, Any], field: str) -> tuple[str, ...]:
     normalized = tuple(value.strip() for value in values)
     duplicates = sorted({value for value in normalized if normalized.count(value) > 1})
     if duplicates:
-        raise ValueError(f"'{field}' contains duplicate names: {', '.join(duplicates)}.")
+        raise ValueError(
+            f"'{field}' contains duplicate names: {', '.join(duplicates)}."
+        )
     return normalized
 
 
@@ -61,7 +63,8 @@ def validate_feasibility(catalog: Catalog) -> None:
 
     if games_per_player > len(catalog.heroes):
         raise ValueError(
-            f"{games_per_player} villains require each player to use {games_per_player} "
+            f"{games_per_player} villains require each player to use "
+            f"{games_per_player} "
             f"distinct heroes, but only {len(catalog.heroes)} heroes are available."
         )
     if len(catalog.players) > len(catalog.heroes):
@@ -76,7 +79,9 @@ def validate_feasibility(catalog: Catalog) -> None:
         )
 
 
-def solve(catalog: Catalog, time_limit_seconds: float, random_seed: int) -> list[dict[str, Any]]:
+def solve(
+    catalog: Catalog, time_limit_seconds: float, random_seed: int
+) -> list[dict[str, Any]]:
     """Return one assignment for every villain and player."""
     validate_feasibility(catalog)
 
@@ -134,7 +139,9 @@ def solve(catalog: Catalog, time_limit_seconds: float, random_seed: int) -> list
     solver.parameters.num_search_workers = 1
     status = solver.solve(model)
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        raise RuntimeError(f"No valid assignment exists (CP-SAT status: {solver.status_name(status)}).")
+        raise RuntimeError(
+            f"No valid assignment exists (CP-SAT status: {solver.status_name(status)})."
+        )
 
     assignments: list[dict[str, Any]] = []
     for villain_index, villain in enumerate(catalog.villains):
@@ -142,7 +149,9 @@ def solve(catalog: Catalog, time_limit_seconds: float, random_seed: int) -> list
         for player_index, player in enumerate(catalog.players):
             for hero_index, hero in enumerate(catalog.heroes):
                 for aspect_index, aspect in enumerate(catalog.aspects):
-                    if solver.value(choices[villain_index, player_index, hero_index, aspect_index]):
+                    if solver.value(
+                        choices[villain_index, player_index, hero_index, aspect_index]
+                    ):
                         players[player] = {"hero": hero, "aspect": aspect}
         assignments.append({"villain": villain, "players": players})
     return assignments

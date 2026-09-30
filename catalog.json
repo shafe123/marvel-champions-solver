@@ -1,10 +1,5 @@
 {
-  "players": [
-    "Player 1",
-    "Player 2",
-    "Player 3",
-    "Player 4"
-  ],
+  "players": ["Player 1", "Player 2", "Player 3", "Player 4"],
   "heroes": [
     "Spider-Man (Peter Parker)",
     "Captain Marvel",
@@ -76,13 +71,7 @@
     "Jessica Jones",
     "Luke Cage"
   ],
-  "aspects": [
-    "Aggression",
-    "Justice",
-    "Leadership",
-    "Protection",
-    "'Pool"
-  ],
+  "aspects": ["Aggression", "Justice", "Leadership", "Protection", "'Pool"],
   "villains": [
     "Rhino",
     "Klaw",

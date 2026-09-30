@@ -41,7 +41,11 @@ function seededRandom(seed) {
   };
 }
 
-function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed } = {}) {
+function buildModel(
+  catalog,
+  glpk,
+  { locks = [], randomize = false, randomSeed } = {},
+) {
   const model = {
     name: "marvel-champions-assignment",
     objective: { direction: glpk.GLP_MIN, name: "objective", vars: [] },
@@ -49,9 +53,12 @@ function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed }
     binaries: [],
   };
   const { players, heroes, aspects, villains } = catalog;
-  const random = randomSeed === undefined ? Math.random : seededRandom(randomSeed);
+  const random =
+    randomSeed === undefined ? Math.random : seededRandom(randomSeed);
   const indexes = (length) =>
-    randomize ? shuffledIndexes(length, random) : Array.from({ length }, (_, index) => index);
+    randomize
+      ? shuffledIndexes(length, random)
+      : Array.from({ length }, (_, index) => index);
   const villainIndexes = indexes(villains.length);
   const playerIndexes = indexes(players.length);
   const heroIndexes = indexes(heroes.length);
@@ -73,7 +80,9 @@ function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed }
         model,
         `assignment_${villain}_${player}`,
         heroIndexes.flatMap((hero) =>
-          aspectIndexes.map((aspect) => variableName(villain, player, hero, aspect)),
+          aspectIndexes.map((aspect) =>
+            variableName(villain, player, hero, aspect),
+          ),
         ),
         { type: glpk.GLP_FX, lb: 1, ub: 1 },
       );
@@ -86,7 +95,9 @@ function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed }
         model,
         `player_hero_${player}_${hero}`,
         villainIndexes.flatMap((villain) =>
-          aspectIndexes.map((aspect) => variableName(villain, player, hero, aspect)),
+          aspectIndexes.map((aspect) =>
+            variableName(villain, player, hero, aspect),
+          ),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
       );
@@ -99,7 +110,9 @@ function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed }
         model,
         `hero_aspect_${hero}_${aspect}`,
         villainIndexes.flatMap((villain) =>
-          playerIndexes.map((player) => variableName(villain, player, hero, aspect)),
+          playerIndexes.map((player) =>
+            variableName(villain, player, hero, aspect),
+          ),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
       );
@@ -112,7 +125,9 @@ function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed }
         model,
         `scenario_hero_${villain}_${hero}`,
         playerIndexes.flatMap((player) =>
-          aspectIndexes.map((aspect) => variableName(villain, player, hero, aspect)),
+          aspectIndexes.map((aspect) =>
+            variableName(villain, player, hero, aspect),
+          ),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
       );
@@ -123,12 +138,14 @@ function buildModel(catalog, glpk, { locks = [], randomize = false, randomSeed }
     addConstraint(
       model,
       `lock_${index}`,
-      [variableName(
-        villains.indexOf(lock.villain),
-        players.indexOf(lock.player),
-        heroes.indexOf(lock.hero),
-        aspects.indexOf(lock.aspect),
-      )],
+      [
+        variableName(
+          villains.indexOf(lock.villain),
+          players.indexOf(lock.player),
+          heroes.indexOf(lock.hero),
+          aspects.indexOf(lock.aspect),
+        ),
+      ],
       { type: glpk.GLP_FX, lb: 1, ub: 1 },
     );
   }
@@ -151,7 +168,9 @@ function decodeAssignments(catalog, values) {
         }
       }
       if (!selected) {
-        throw new Error(`Solver did not assign ${players[player]} against ${villainName}.`);
+        throw new Error(
+          `Solver did not assign ${players[player]} against ${villainName}.`,
+        );
       }
       assignments[players[player]] = selected;
     }

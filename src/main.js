@@ -98,12 +98,19 @@ function restoreCatalog() {
 
 function findDuplicates(names) {
   const seen = new Set();
-  return [...new Set(names.filter((name) => (seen.has(name) ? true : !seen.add(name))))];
+  return [
+    ...new Set(
+      names.filter((name) => (seen.has(name) ? true : !seen.add(name))),
+    ),
+  ];
 }
 
 function getCatalog() {
   return Object.fromEntries(
-    Object.entries(fields).map(([field, element]) => [field, parseNames(element.value)]),
+    Object.entries(fields).map(([field, element]) => [
+      field,
+      parseNames(element.value),
+    ]),
   );
 }
 
@@ -145,7 +152,9 @@ function validateCatalog(catalog) {
   if (catalog.villains.length === catalog.heroes.length) {
     warnings.push("Every player will use every hero exactly once.");
   } else if (catalog.villains.length > catalog.heroes.length - 3) {
-    warnings.push("Very few unused heroes remain per player; solving may take longer.");
+    warnings.push(
+      "Very few unused heroes remain per player; solving may take longer.",
+    );
   }
   return { errors, warnings };
 }
@@ -167,11 +176,15 @@ function clearResults() {
 }
 
 function renderResults(assignments, locks) {
-  const lockedSlots = new Set(locks.map(({ villain, player }) => `${villain}\0${player}`));
+  const lockedSlots = new Set(
+    locks.map(({ villain, player }) => `${villain}\0${player}`),
+  );
   const table = document.createElement("table");
   const header = document.createElement("tr");
-  header.innerHTML = "<th scope=\"col\">Villain</th>";
-  for (const player of assignments[0].players ? Object.keys(assignments[0].players) : []) {
+  header.innerHTML = '<th scope="col">Villain</th>';
+  for (const player of assignments[0].players
+    ? Object.keys(assignments[0].players)
+    : []) {
     const cell = document.createElement("th");
     cell.scope = "col";
     cell.textContent = player;
@@ -265,7 +278,9 @@ async function generateSolution(randomize) {
       ...warnings.map((text) => ({ type: "warning", text })),
       {
         type: "success",
-        text: randomize ? "Valid randomized solution generated." : "Valid solution generated.",
+        text: randomize
+          ? "Valid randomized solution generated."
+          : "Valid solution generated.",
       },
     ]);
     renderResults(assignments, locks);
@@ -290,5 +305,7 @@ form.addEventListener("submit", (event) => {
 randomizeButton.addEventListener("click", () => generateSolution(true));
 resetButton.addEventListener("click", restoreCatalog);
 addLockButton.addEventListener("click", () => addLock());
-Object.values(fields).forEach((field) => field.addEventListener("input", refreshLockOptions));
+Object.values(fields).forEach((field) =>
+  field.addEventListener("input", refreshLockOptions),
+);
 restoreCatalog();

@@ -42,7 +42,10 @@ export function validateLocks(catalog, locks = []) {
     }
 
     const playerHeroKey = `${lock.player}\0${lock.hero}`;
-    if (playerHeroes.has(playerHeroKey) && playerHeroes.get(playerHeroKey).villain !== lock.villain) {
+    if (
+      playerHeroes.has(playerHeroKey) &&
+      playerHeroes.get(playerHeroKey).villain !== lock.villain
+    ) {
       errors.push(
         `${label}: ${lock.player} cannot reuse ${lock.hero}; it is already locked against ${playerHeroes.get(playerHeroKey).villain}.`,
       );
@@ -61,7 +64,10 @@ export function validateLocks(catalog, locks = []) {
     }
 
     const scenarioHeroKey = `${lock.villain}\0${lock.hero}`;
-    if (scenarioHeroes.has(scenarioHeroKey) && scenarioHeroes.get(scenarioHeroKey).player !== lock.player) {
+    if (
+      scenarioHeroes.has(scenarioHeroKey) &&
+      scenarioHeroes.get(scenarioHeroKey).player !== lock.player
+    ) {
       errors.push(
         `${label}: ${lock.hero} is already locked for ${scenarioHeroes.get(scenarioHeroKey).player} against ${lock.villain}; heroes must differ within a scenario.`,
       );
