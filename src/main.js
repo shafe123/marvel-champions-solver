@@ -60,7 +60,13 @@ function addLock(lock = {}) {
   const row = document.createElement("div");
   row.className = "lock-row";
   for (const field of ["villain", "player", "hero", "aspect"]) {
-    row.append(createSelect(field, catalog[`${field}s`] ?? catalog.aspects, lock[field]));
+    row.append(
+      createSelect(
+        field,
+        catalog[field === "hero" ? "heroes" : `${field}s`],
+        lock[field],
+      ),
+    );
   }
   const remove = document.createElement("button");
   remove.type = "button";
