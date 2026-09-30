@@ -1,4 +1,10 @@
 import { readFile } from "node:fs/promises";
+import { parseNames } from "../src/catalog-input.js";
+
+const parsedVillains = parseNames("Loki\nLoki, God of Lies");
+if (parsedVillains.length !== 2 || parsedVillains[1] !== "Loki, God of Lies") {
+  throw new Error("Roster parsing must preserve commas in names.");
+}
 
 let messageListener;
 let response;

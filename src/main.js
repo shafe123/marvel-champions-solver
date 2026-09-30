@@ -1,4 +1,5 @@
 import defaultCatalog from "../catalog.json";
+import { parseNames } from "./catalog-input.js";
 import "./style.css";
 
 const fields = {
@@ -25,13 +26,6 @@ function restoreCatalog() {
   }
   clearResults();
   showMessages([]);
-}
-
-function parseNames(value) {
-  return value
-    .split(/[\n,]/)
-    .map((name) => name.trim())
-    .filter(Boolean);
 }
 
 function findDuplicates(names) {
