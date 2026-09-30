@@ -124,7 +124,7 @@ self.addEventListener("message", async ({ data }) => {
 
   try {
     const glpk = await getGlpk();
-    const result = glpk.solve(buildModel(data.catalog, glpk), {
+    const result = await glpk.solve(buildModel(data.catalog, glpk), {
       msglev: glpk.GLP_MSG_OFF,
       presol: true,
       tmlim: MAXIMUM_SOLVE_TIME_SECONDS,
