@@ -49,8 +49,15 @@
           </label>
         </div>
         <p class="field-help">Enter one name per line. Edit any list, then generate a new schedule.</p>
+        <fieldset class="locks">
+          <legend>Manual assignments</legend>
+          <p class="field-help">Lock a player to a hero and aspect against a specific villain. The solver fills all other slots.</p>
+          <div id="lock-rows"></div>
+          <button id="add-lock" type="button" class="secondary">Add locked assignment</button>
+        </fieldset>
         <div class="actions">
           <button id="generate" type="submit">Generate solution</button>
+          <button id="randomize" type="button">Randomize solution</button>
           <button id="reset" type="button" class="secondary">Restore approved roster</button>
         </div>
       </form>

@@ -10,7 +10,11 @@ The default [`catalog.json`](catalog.json) contains the approved 69 heroes, 5 as
 
 ## Web application
 
-The GitHub Pages application runs the solver privately in the browser using [GLPK.js](https://github.com/jvail/glpk.js), a WebAssembly mixed-integer solver. It provides editable lists for players, heroes, aspects, and villain scenarios, explains infeasible inputs, and displays the generated assignment.
+The GitHub Pages application runs the solver privately in the browser using [GLPK.js](https://github.com/jvail/glpk.js), a WebAssembly mixed-integer solver. It provides editable lists for players, heroes, aspects, and villain scenarios, explains infeasible inputs, and displays the generated assignment. **Generate solution** uses a deterministic model order. **Randomize solution** shuffles only the solver's internal model order before solving, while retaining the entered player and villain order in the displayed schedule. It produces varied feasible schedules, but does not uniformly sample all valid schedules.
+
+### Locking assignments
+
+Use **Add locked assignment** to choose a villain, player, hero, and aspect. Each valid lock becomes a fixed assignment in the browser optimization model while the solver fills the remaining slots. Locks are marked in the solution table. Before solving, the app identifies unknown names, incomplete locks, duplicate player/scenario slots, a player reusing a hero, globally reused hero–aspect pairs, and duplicate heroes within a scenario.
 
 ```bash
 npm ci
