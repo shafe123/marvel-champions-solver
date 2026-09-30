@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Generate Marvel Champions hero and aspect assignments for every scenario."
+    />
+    <title>Marvel Champions Solver</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header>
+        <p class="eyebrow">Marvel Champions</p>
+        <h1>Hero and aspect solver</h1>
+        <p class="intro">
+          Create a complete four-player schedule while keeping each player’s heroes
+          and every hero–aspect pairing unique.
+        </p>
+      </header>
+
+      <section class="rules" aria-labelledby="rules-heading">
+        <h2 id="rules-heading">Rules enforced</h2>
+        <ul>
+          <li>Each player uses a hero at most once.</li>
+          <li>Each hero–aspect pairing appears at most once overall.</li>
+          <li>Players in the same scenario use different heroes.</li>
+        </ul>
+      </section>
+
+      <form id="catalog-form">
+        <div class="catalog-grid">
+          <label>
+            <span>Players</span>
+            <textarea id="players" rows="5" required></textarea>
+          </label>
+          <label>
+            <span>Aspects</span>
+            <textarea id="aspects" rows="5" required></textarea>
+          </label>
+          <label>
+            <span>Heroes</span>
+            <textarea id="heroes" rows="14" required></textarea>
+          </label>
+          <label>
+            <span>Villain scenarios</span>
+            <textarea id="villains" rows="14" required></textarea>
+          </label>
+        </div>
+        <p class="field-help">Enter one name per line. Edit any list, then generate a new schedule.</p>
+        <div class="actions">
+          <button id="generate" type="submit">Generate solution</button>
+          <button id="reset" type="button" class="secondary">Restore approved roster</button>
+        </div>
+      </form>
+
+      <section id="messages" class="messages" aria-live="polite"></section>
+      <section id="results" hidden aria-live="polite"></section>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

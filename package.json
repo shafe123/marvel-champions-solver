@@ -1,0 +1,16 @@
+{
+  "name": "marvel-champions-solver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test:web": "node scripts/test-worker.mjs"
+  },
+  "dependencies": {
+    "glpk.js": "^4.0.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

@@ -1,0 +1,42 @@
+import unittest
+
+from marvel_solver import Catalog, solve, validate_feasibility
+
+
+class SolverTests(unittest.TestCase):
+    def test_assignments_honor_all_constraints(self) -> None:
+        catalog = Catalog(
+            players=("A", "B"),
+            heroes=("Hero 1", "Hero 2", "Hero 3"),
+            aspects=("Aggression", "Justice"),
+            villains=("Villain 1", "Villain 2", "Villain 3"),
+        )
+
+        assignments = solve(catalog, time_limit_seconds=5, random_seed=1)
+
+        player_heroes = {player: set() for player in catalog.players}
+        hero_aspects = set()
+        for scenario in assignments:
+            scenario_heroes = set()
+            for player, choice in scenario["players"].items():
+                self.assertNotIn(choice["hero"], player_heroes[player])
+                self.assertNotIn((choice["hero"], choice["aspect"]), hero_aspects)
+                self.assertNotIn(choice["hero"], scenario_heroes)
+                player_heroes[player].add(choice["hero"])
+                hero_aspects.add((choice["hero"], choice["aspect"]))
+                scenario_heroes.add(choice["hero"])
+
+    def test_feasibility_rejects_too_many_scenarios(self) -> None:
+        catalog = Catalog(
+            players=("A",),
+            heroes=("Hero 1",),
+            aspects=("Justice",),
+            villains=("Villain 1", "Villain 2"),
+        )
+
+        with self.assertRaisesRegex(ValueError, "distinct heroes"):
+            validate_feasibility(catalog)
+
+
+if __name__ == "__main__":
+    unittest.main()
