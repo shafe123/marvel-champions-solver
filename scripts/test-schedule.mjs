@@ -156,6 +156,59 @@ expectError(
   "Villain A assigns Aspect A",
 );
 expectError(
+  "balanced aspects per player",
+  [
+    copy()[0],
+    {
+      ...copy()[1],
+      players: {
+        ...copy()[1].players,
+        "Player 1": { hero: "Hero C", aspect: "Aspect A" },
+      },
+    },
+  ],
+  "Player 1 uses Aspect A 2 times",
+);
+
+const unevenBalanceCatalog = {
+  players: ["Player 1"],
+  heroes: ["Hero A", "Hero B", "Hero C", "Hero D", "Hero E", "Hero F"],
+  aspects: ["Aspect A", "Aspect B", "Aspect C", "Aspect D", "Aspect E"],
+  villains: [
+    "Villain A",
+    "Villain B",
+    "Villain C",
+    "Villain D",
+    "Villain E",
+    "Villain F",
+  ],
+};
+const unevenBalanceSchedule = unevenBalanceCatalog.villains.map(
+  (villain, index) => ({
+    villain,
+    players: {
+      "Player 1": {
+        hero: unevenBalanceCatalog.heroes[index],
+        aspect: unevenBalanceCatalog.aspects[Math.floor(index / 2)],
+      },
+    },
+  }),
+);
+const unevenBalanceErrors = validateSchedule(
+  unevenBalanceCatalog,
+  unevenBalanceSchedule,
+);
+if (
+  !unevenBalanceErrors.some((error) =>
+    error.includes("Player 1 uses Aspect D 0 times"),
+  )
+) {
+  throw new Error(
+    "Schedule validation accepted aspect counts that differ by more than one.",
+  );
+}
+
+expectError(
   "locked assignment preservation",
   [
     {

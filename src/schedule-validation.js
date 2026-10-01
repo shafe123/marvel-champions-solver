@@ -71,6 +71,7 @@ export function validateSchedule(catalog, assignments, locks = []) {
 
   const playerHeroes = new Map();
   const heroAspects = new Map();
+  const playerAspects = new Map();
   for (const [villain, assignment] of assignmentsByVillain) {
     const scenarioHeroes = new Map();
     const scenarioAspects = new Map();
@@ -115,6 +116,34 @@ export function validateSchedule(catalog, assignments, locks = []) {
         );
       } else {
         scenarioAspects.set(choice.aspect, player);
+      }
+
+      const playerAspectKey = `${player}\0${choice.aspect}`;
+      playerAspects.set(
+        playerAspectKey,
+        (playerAspects.get(playerAspectKey) ?? 0) + 1,
+      );
+    }
+  }
+
+  const minAspectUses = Math.floor(
+    catalog.villains.length / catalog.aspects.length,
+  );
+  const maxAspectUses = Math.ceil(
+    catalog.villains.length / catalog.aspects.length,
+  );
+  for (const player of catalog.players) {
+    for (const aspect of catalog.aspects) {
+      const count = playerAspects.get(`${player}\0${aspect}`) ?? 0;
+      if (count > maxAspectUses) {
+        errors.push(
+          `${player} uses ${aspect} ${count} times; aspects must be balanced across the schedule with no more than ${maxAspectUses} uses per aspect.`,
+        );
+      }
+      if (count < minAspectUses) {
+        errors.push(
+          `${player} uses ${aspect} ${count} times; aspects must be balanced across the schedule with at least ${minAspectUses} uses per aspect.`,
+        );
       }
     }
   }

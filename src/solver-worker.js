@@ -72,7 +72,11 @@ function buildModel(
             heroIndexes.length
         ];
       const preferredAspect =
-        aspectIndexes[playerIndexes.indexOf(player) % aspectIndexes.length];
+        aspectIndexes[
+          (villainIndexes.indexOf(villain) +
+            2 * playerIndexes.indexOf(player)) %
+            aspectIndexes.length
+        ];
       for (const hero of heroIndexes) {
         for (const aspect of aspectIndexes) {
           const name = variableName(villain, player, hero, aspect);
@@ -156,6 +160,27 @@ function buildModel(
           ),
         ),
         { type: glpk.GLP_UP, lb: 0, ub: 1 },
+      );
+    }
+  }
+
+  const minAspectUses = Math.floor(villains.length / aspects.length);
+  const maxAspectUses = Math.ceil(villains.length / aspects.length);
+  for (const player of playerIndexes) {
+    for (const aspect of aspectIndexes) {
+      addConstraint(
+        model,
+        `player_aspect_${player}_${aspect}`,
+        villainIndexes.flatMap((villain) =>
+          heroIndexes.map((hero) =>
+            variableName(villain, player, hero, aspect),
+          ),
+        ),
+        {
+          type: minAspectUses === maxAspectUses ? glpk.GLP_FX : glpk.GLP_DB,
+          lb: minAspectUses,
+          ub: maxAspectUses,
+        },
       );
     }
   }

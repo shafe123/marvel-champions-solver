@@ -147,6 +147,19 @@ def solve(
                 for hero_index in range(len(catalog.heroes))
             )
 
+    # Every player uses each aspect roughly equally across the schedule.
+    min_aspect_uses = len(catalog.villains) // len(catalog.aspects)
+    max_aspect_uses = -(-len(catalog.villains) // len(catalog.aspects))
+    for player_index in range(len(catalog.players)):
+        for aspect_index in range(len(catalog.aspects)):
+            aspect_uses = sum(
+                choices[villain_index, player_index, hero_index, aspect_index]
+                for villain_index in range(len(catalog.villains))
+                for hero_index in range(len(catalog.heroes))
+            )
+            model.add(min_aspect_uses <= aspect_uses)
+            model.add(aspect_uses <= max_aspect_uses)
+
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = time_limit_seconds
     solver.parameters.random_seed = random_seed
