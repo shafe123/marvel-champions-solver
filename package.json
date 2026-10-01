@@ -8,7 +8,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "test:web": "node scripts/test-worker.mjs"
+    "test:schedule": "node scripts/test-schedule.mjs",
+    "test:web": "node scripts/test-worker.mjs && node scripts/test-schedule.mjs"
   },
   "dependencies": {
     "glpk.js": "^4.0.2"

@@ -5,6 +5,7 @@ This project includes a Python command-line solver and a static web application.
 - A player uses each hero at most once.
 - Each hero-aspect pairing is used at most once across every player and scenario.
 - Players facing the same scenario use different heroes.
+- Players facing the same scenario use different aspects.
 
 The default [`catalog.json`](catalog.json) contains the approved 69 heroes, 5 aspects, 4 players, and 65 villain scenarios.
 
@@ -14,7 +15,13 @@ The GitHub Pages application runs the solver privately in the browser using [GLP
 
 ### Locking assignments
 
-Use **Add locked assignment** to choose a villain, player, hero, and aspect. Each valid lock becomes a fixed assignment in the browser optimization model while the solver fills the remaining slots. Locks are marked in the solution table. Before solving, the app identifies unknown names, incomplete locks, duplicate player/scenario slots, a player reusing a hero, globally reused hero–aspect pairs, and duplicate heroes within a scenario.
+Use **Add locked assignment** to add a row to the manual-assignment table, then choose a villain, player, hero, and aspect. Each valid lock becomes a fixed assignment in the browser optimization model while the solver fills the remaining slots. The table has labeled columns and accessible controls, and rows can be removed with **Remove**. Locks are marked in the solution table. Before solving, the app identifies unknown names, incomplete locks, duplicate player/scenario slots, a player reusing a hero, globally reused hero–aspect pairs, and duplicate heroes or aspects within a scenario.
+
+The approved aspects have high-contrast color labels in manual assignment controls and solution results: Aggression (red), Justice (yellow), Protection (green), Leadership (blue), and 'Pool (pink). Aspect names are always shown alongside their colors.
+
+### Swapping generated assignments
+
+After generating a solution, drag a complete hero-and-aspect assignment onto another assignment to swap them. Keyboard and touch users can instead select one assignment, then select a second assignment as the swap target. The app validates the proposed schedule before changing the displayed solution; an invalid swap explains the violated rule and leaves the schedule unchanged. Locked assignments have a **Locked** badge and cannot be dragged, selected, or swapped.
 
 ```bash
 npm ci
@@ -22,7 +29,7 @@ npm run build
 cd dist && python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Run `npm run test:web` to validate the full browser solver model against the default catalog.
+Open `http://localhost:8000`. Run `npm run test:web` to validate the full browser solver model and schedule-validation rules against the default catalog.
 
 The deployment workflow publishes `dist/` to GitHub Pages whenever `main` changes.
 
@@ -74,6 +81,7 @@ Before invoking CP-SAT, the solver gives a clear error when the catalog cannot m
 - Villains cannot outnumber heroes, because every player needs a different hero for every scenario.
 - The total assignments cannot exceed `heroes × aspects`.
 - Players cannot outnumber heroes, since a scenario cannot contain duplicate heroes.
+- Players cannot outnumber aspects, since a scenario cannot contain duplicate aspects.
 
 Run the test suite with:
 

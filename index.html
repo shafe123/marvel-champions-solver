@@ -26,6 +26,7 @@
           <li>Each player uses a hero at most once.</li>
           <li>Each hero–aspect pairing appears at most once overall.</li>
           <li>Players in the same scenario use different heroes.</li>
+          <li>Players in the same scenario use different aspects.</li>
         </ul>
       </section>
 
@@ -57,7 +58,20 @@
             Lock a player to a hero and aspect against a specific villain. The
             solver fills all other slots.
           </p>
-          <div id="lock-rows"></div>
+          <div class="lock-table-wrapper">
+            <table class="lock-table">
+              <thead>
+                <tr>
+                  <th scope="col">Villain scenario</th>
+                  <th scope="col">Player</th>
+                  <th scope="col">Hero</th>
+                  <th scope="col">Aspect</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="lock-rows"></tbody>
+            </table>
+          </div>
           <button id="add-lock" type="button" class="secondary">
             Add locked assignment
           </button>

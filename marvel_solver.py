@@ -72,6 +72,11 @@ def validate_feasibility(catalog: Catalog) -> None:
             f"{len(catalog.players)} players cannot use distinct heroes in one game "
             f"when only {len(catalog.heroes)} heroes are available."
         )
+    if len(catalog.players) > len(catalog.aspects):
+        raise ValueError(
+            f"{len(catalog.players)} players cannot use distinct aspects in one game "
+            f"when only {len(catalog.aspects)} aspects are available."
+        )
     if player_assignments > hero_aspect_capacity:
         raise ValueError(
             f"{player_assignments} assignments exceed the {hero_aspect_capacity} "
@@ -131,6 +136,15 @@ def solve(
                 choices[villain_index, player_index, hero_index, aspect_index]
                 for player_index in range(len(catalog.players))
                 for aspect_index in range(len(catalog.aspects))
+            )
+
+    # Players in the same game must have different aspects.
+    for villain_index in range(len(catalog.villains)):
+        for aspect_index in range(len(catalog.aspects)):
+            model.add_at_most_one(
+                choices[villain_index, player_index, hero_index, aspect_index]
+                for player_index in range(len(catalog.players))
+                for hero_index in range(len(catalog.heroes))
             )
 
     solver = cp_model.CpSolver()

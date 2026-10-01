@@ -18,13 +18,16 @@ class SolverTests(unittest.TestCase):
         hero_aspects = set()
         for scenario in assignments:
             scenario_heroes = set()
+            scenario_aspects = set()
             for player, choice in scenario["players"].items():
                 self.assertNotIn(choice["hero"], player_heroes[player])
                 self.assertNotIn((choice["hero"], choice["aspect"]), hero_aspects)
                 self.assertNotIn(choice["hero"], scenario_heroes)
+                self.assertNotIn(choice["aspect"], scenario_aspects)
                 player_heroes[player].add(choice["hero"])
                 hero_aspects.add((choice["hero"], choice["aspect"]))
                 scenario_heroes.add(choice["hero"])
+                scenario_aspects.add(choice["aspect"])
 
     def test_feasibility_rejects_too_many_scenarios(self) -> None:
         catalog = Catalog(
@@ -35,6 +38,17 @@ class SolverTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(ValueError, "distinct heroes"):
+            validate_feasibility(catalog)
+
+    def test_feasibility_rejects_too_many_players_for_aspects(self) -> None:
+        catalog = Catalog(
+            players=("A", "B"),
+            heroes=("Hero 1", "Hero 2"),
+            aspects=("Justice",),
+            villains=("Villain 1",),
+        )
+
+        with self.assertRaisesRegex(ValueError, "distinct aspects"):
             validate_feasibility(catalog)
 
 
