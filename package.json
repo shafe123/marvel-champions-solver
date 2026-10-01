@@ -9,7 +9,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "test:schedule": "node scripts/test-schedule.mjs",
-    "test:web": "node scripts/test-worker.mjs && node scripts/test-schedule.mjs"
+    "test:web": "node scripts/test-worker.mjs && node scripts/test-schedule.mjs && node scripts/test-review-gate.mjs"
   },
   "dependencies": {
     "glpk.js": "^4.0.2"
