@@ -12,6 +12,7 @@ export function validateLocks(catalog, locks = []) {
   const playerHeroes = new Map();
   const heroAspects = new Map();
   const scenarioHeroes = new Map();
+  const scenarioAspects = new Map();
 
   locks.forEach((lock, index) => {
     const label = describeLock(index);
@@ -73,6 +74,18 @@ export function validateLocks(catalog, locks = []) {
       );
     } else {
       scenarioHeroes.set(scenarioHeroKey, lock);
+    }
+
+    const scenarioAspectKey = `${lock.villain}\0${lock.aspect}`;
+    if (
+      scenarioAspects.has(scenarioAspectKey) &&
+      scenarioAspects.get(scenarioAspectKey).player !== lock.player
+    ) {
+      errors.push(
+        `${label}: ${lock.aspect} is already locked for ${scenarioAspects.get(scenarioAspectKey).player} against ${lock.villain}; aspects must differ within a scenario.`,
+      );
+    } else {
+      scenarioAspects.set(scenarioAspectKey, lock);
     }
   });
 

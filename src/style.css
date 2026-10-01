@@ -112,15 +112,22 @@ textarea:focus {
   font-weight: 800;
   padding: 0 0.4rem;
 }
-#lock-rows {
-  display: grid;
-  gap: 0.7rem;
-  margin: 1rem 0;
+#lock-rows:empty::after {
+  color: #aeb6c3;
+  content: "No manual assignments added.";
+  display: table-cell;
+  font-style: italic;
+  padding: 0.7rem;
 }
-.lock-row {
-  display: grid;
-  gap: 0.7rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+.lock-table-wrapper {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.lock-table {
+  min-width: 720px;
+}
+.lock-table select {
+  width: 100%;
 }
 select {
   background: #161e28;
@@ -144,6 +151,67 @@ select:focus {
   color: #ffd06b;
   font-size: 0.8rem;
   font-weight: 800;
+}
+.locked-assignment {
+  background: #332d1d;
+  box-shadow: inset 4px 0 #ffd06b;
+}
+.assignment-swap-control {
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 0.2rem;
+  color: inherit;
+  cursor: grab;
+  font: inherit;
+  font-weight: inherit;
+  padding: 0.2rem;
+  text-align: left;
+  width: 100%;
+}
+.assignment-swap-control:hover,
+.assignment-swap-control:focus-visible {
+  background: #263244;
+  border-color: #f9bd40;
+  outline: 2px solid #f9bd4055;
+}
+.assignment-swap-control.is-selected {
+  background: #513e18;
+  border-color: #ffd06b;
+  cursor: pointer;
+}
+.swap-instructions {
+  color: #d8dce3;
+  margin: -0.5rem 0 1rem;
+  max-width: 720px;
+}
+.aspect-label,
+.aspect-select {
+  border-radius: 0.25rem;
+  font-weight: 800;
+}
+.aspect-label {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+}
+.aspect-aggression {
+  background: #a52834;
+  color: #fff;
+}
+.aspect-justice {
+  background: #f9bd40;
+  color: #131923;
+}
+.aspect-protection {
+  background: #24734d;
+  color: #fff;
+}
+.aspect-leadership {
+  background: #2366a3;
+  color: #fff;
+}
+.aspect-pool {
+  background: #b84278;
+  color: #fff;
 }
 
 .actions {
@@ -230,9 +298,6 @@ tbody th {
     padding: 2rem 1rem;
   }
   .catalog-grid {
-    grid-template-columns: 1fr;
-  }
-  .lock-row {
     grid-template-columns: 1fr;
   }
 }

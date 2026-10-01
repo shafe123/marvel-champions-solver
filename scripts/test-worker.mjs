@@ -1,6 +1,28 @@
 import { readFile } from "node:fs/promises";
+import { aspectColorClass, aspectColors } from "../src/aspect-colors.js";
 import { parseNames } from "../src/catalog-input.js";
 import { validateLocks } from "../src/locks.js";
+
+const expectedAspectColors = {
+  Aggression: "aggression",
+  Justice: "justice",
+  Protection: "protection",
+  Leadership: "leadership",
+  "'Pool": "pool",
+};
+if (JSON.stringify(aspectColors) !== JSON.stringify(expectedAspectColors)) {
+  throw new Error("Aspect colors must include the approved aspect mappings.");
+}
+for (const [aspect, color] of Object.entries(expectedAspectColors)) {
+  if (aspectColorClass(aspect) !== `aspect-${color}`) {
+    throw new Error(`${aspect} did not receive its expected color class.`);
+  }
+}
+if (aspectColorClass("Custom aspect") !== "") {
+  throw new Error(
+    "Unknown aspects must retain the default accessible styling.",
+  );
+}
 
 const parsedVillains = parseNames("Loki\nLoki, God of Lies");
 if (parsedVillains.length !== 2 || parsedVillains[1] !== "Loki, God of Lies") {
@@ -68,6 +90,7 @@ function validate(assignments) {
   const heroAspects = new Set();
   for (const assignment of assignments) {
     const scenarioHeroes = new Set();
+    const scenarioAspects = new Set();
     for (const [player, choice] of Object.entries(assignment.players)) {
       if (playerHeroes.get(player).has(choice.hero)) {
         throw new Error(`${player} reused ${choice.hero}.`);
@@ -80,9 +103,15 @@ function validate(assignments) {
           `${assignment.villain} contains ${choice.hero} more than once.`,
         );
       }
+      if (scenarioAspects.has(choice.aspect)) {
+        throw new Error(
+          `${assignment.villain} contains ${choice.aspect} more than once.`,
+        );
+      }
       playerHeroes.get(player).add(choice.hero);
       heroAspects.add(`${choice.hero}\0${choice.aspect}`);
       scenarioHeroes.add(choice.hero);
+      scenarioAspects.add(choice.aspect);
     }
   }
 }
@@ -166,6 +195,12 @@ const conflicts = [
     hero: "Spider-Man (Peter Parker)",
     aspect: "Protection",
   },
+  {
+    villain: "Rhino",
+    player: "Player 4",
+    hero: "Black Panther",
+    aspect: "Justice",
+  },
 ];
 const conflictErrors = validateLocks(catalog, conflicts).join("\n");
 for (const expected of [
@@ -173,6 +208,7 @@ for (const expected of [
   "cannot reuse",
   "already locked for",
   "heroes must differ",
+  "aspects must differ",
 ]) {
   if (!conflictErrors.includes(expected)) {
     throw new Error(`Lock validation did not report ${expected}.`);
@@ -182,6 +218,18 @@ const workerConflict = await solveFailure({ locks: conflicts.slice(0, 2) });
 if (!workerConflict.includes("duplicate slot")) {
   throw new Error(
     "Browser worker did not return the actionable lock conflict.",
+  );
+}
+
+const aspectLockCollision = await solveFailure({
+  locks: [conflicts[0], conflicts[5]],
+});
+if (
+  !aspectLockCollision.includes("Justice") ||
+  !aspectLockCollision.includes("aspects must differ")
+) {
+  throw new Error(
+    "Browser worker did not return the actionable same-scenario aspect conflict.",
   );
 }
 

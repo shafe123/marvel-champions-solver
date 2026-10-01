@@ -66,9 +66,20 @@ function buildModel(
 
   for (const villain of villainIndexes) {
     for (const player of playerIndexes) {
+      const preferredHero =
+        heroIndexes[
+          (villainIndexes.indexOf(villain) + playerIndexes.indexOf(player)) %
+            heroIndexes.length
+        ];
+      const preferredAspect =
+        aspectIndexes[playerIndexes.indexOf(player) % aspectIndexes.length];
       for (const hero of heroIndexes) {
         for (const aspect of aspectIndexes) {
-          model.binaries.push(variableName(villain, player, hero, aspect));
+          const name = variableName(villain, player, hero, aspect);
+          model.binaries.push(name);
+          if (hero !== preferredHero || aspect !== preferredAspect) {
+            model.objective.vars.push({ name, coef: 1 });
+          }
         }
       }
     }
@@ -126,6 +137,21 @@ function buildModel(
         `scenario_hero_${villain}_${hero}`,
         playerIndexes.flatMap((player) =>
           aspectIndexes.map((aspect) =>
+            variableName(villain, player, hero, aspect),
+          ),
+        ),
+        { type: glpk.GLP_UP, lb: 0, ub: 1 },
+      );
+    }
+  }
+
+  for (const villain of villainIndexes) {
+    for (const aspect of aspectIndexes) {
+      addConstraint(
+        model,
+        `scenario_aspect_${villain}_${aspect}`,
+        playerIndexes.flatMap((player) =>
+          heroIndexes.map((hero) =>
             variableName(villain, player, hero, aspect),
           ),
         ),

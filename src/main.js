@@ -1,6 +1,8 @@
 import defaultCatalog from "../catalog.json";
+import { aspectColorClass } from "./aspect-colors.js";
 import { parseNames } from "./catalog-input.js";
 import { validateLocks } from "./locks.js";
+import { validateSchedule } from "./schedule-validation.js";
 import "./style.css";
 
 const fields = {
@@ -19,11 +21,18 @@ const messages = document.querySelector("#messages");
 const results = document.querySelector("#results");
 
 let solverWorker;
+let currentSolution;
+let currentCatalog;
+let currentLocks = [];
+let selectedAssignment;
 
 function createSelect(field, names, value) {
   const select = document.createElement("select");
   select.name = field;
-  select.setAttribute("aria-label", `Locked assignment ${field}`);
+  select.setAttribute(
+    "aria-label",
+    `${field[0].toUpperCase()}${field.slice(1)} for manual assignment`,
+  );
   const placeholder = document.createElement("option");
   placeholder.value = "";
   placeholder.textContent = `Choose ${field}`;
@@ -41,7 +50,16 @@ function createSelect(field, names, value) {
     select.append(option);
   }
   select.value = value ?? "";
+  if (field === "aspect") {
+    select.classList.add("aspect-select");
+    updateAspectColor(select);
+    select.addEventListener("change", () => updateAspectColor(select));
+  }
   return select;
+}
+
+function updateAspectColor(select) {
+  select.className = `aspect-select ${aspectColorClass(select.value)}`;
 }
 
 function getLocks() {
@@ -57,23 +75,27 @@ function getLocks() {
 
 function addLock(lock = {}) {
   const catalog = getCatalog();
-  const row = document.createElement("div");
+  const row = document.createElement("tr");
   row.className = "lock-row";
   for (const field of ["villain", "player", "hero", "aspect"]) {
-    row.append(
+    const cell = document.createElement("td");
+    cell.append(
       createSelect(
         field,
         catalog[field === "hero" ? "heroes" : `${field}s`],
         lock[field],
       ),
     );
+    row.append(cell);
   }
+  const actions = document.createElement("td");
   const remove = document.createElement("button");
   remove.type = "button";
   remove.className = "remove-lock";
   remove.textContent = "Remove";
   remove.addEventListener("click", () => row.remove());
-  row.append(remove);
+  actions.append(remove);
+  row.append(actions);
   lockRows.append(row);
 }
 
@@ -144,6 +166,11 @@ function validateCatalog(catalog) {
       `${catalog.players.length} players cannot use distinct heroes in one scenario when only ${catalog.heroes.length} heroes are available.`,
     );
   }
+  if (catalog.players.length > catalog.aspects.length) {
+    errors.push(
+      `${catalog.players.length} players cannot use distinct aspects in one scenario when only ${catalog.aspects.length} aspects are available.`,
+    );
+  }
   if (assignments > heroAspectCapacity) {
     errors.push(
       `${assignments} assignments exceed the ${heroAspectCapacity} unique hero–aspect pairings available.`,
@@ -171,13 +198,95 @@ function showMessages(items) {
 }
 
 function clearResults() {
+  currentSolution = undefined;
+  currentCatalog = undefined;
+  currentLocks = [];
+  selectedAssignment = undefined;
   results.hidden = true;
   results.replaceChildren();
 }
 
+function slotKey(villain, player) {
+  return `${villain}\0${player}`;
+}
+
+function getAssignment(villain, player, assignments = currentSolution) {
+  return assignments?.find((assignment) => assignment.villain === villain)
+    ?.players?.[player];
+}
+
+function applySwap(source, target) {
+  const sourceChoice = getAssignment(source.villain, source.player);
+  const targetChoice = getAssignment(target.villain, target.player);
+  if (!sourceChoice || !targetChoice) {
+    showMessages([
+      {
+        type: "error",
+        text: "Cannot swap: one of the selected assignments no longer exists.",
+      },
+    ]);
+    return;
+  }
+
+  const candidate = JSON.parse(JSON.stringify(currentSolution));
+  const candidateSource = getAssignment(
+    source.villain,
+    source.player,
+    candidate,
+  );
+  const candidateTarget = getAssignment(
+    target.villain,
+    target.player,
+    candidate,
+  );
+  [candidateSource.hero, candidateTarget.hero] = [
+    candidateTarget.hero,
+    candidateSource.hero,
+  ];
+  [candidateSource.aspect, candidateTarget.aspect] = [
+    candidateTarget.aspect,
+    candidateSource.aspect,
+  ];
+
+  const errors = validateSchedule(currentCatalog, candidate, currentLocks);
+  selectedAssignment = undefined;
+  if (errors.length > 0) {
+    showMessages(
+      errors.map((text) => ({
+        type: "error",
+        text: `Cannot swap assignments: ${text}`,
+      })),
+    );
+    renderResults(currentSolution, currentLocks);
+    return;
+  }
+
+  currentSolution = candidate;
+  showMessages([{ type: "success", text: "Assignments swapped." }]);
+  renderResults(currentSolution, currentLocks);
+}
+
+function selectOrSwap(villain, player) {
+  const target = { villain, player };
+  if (!selectedAssignment) {
+    selectedAssignment = target;
+    renderResults(currentSolution, currentLocks);
+    return;
+  }
+  if (
+    slotKey(selectedAssignment.villain, selectedAssignment.player) ===
+    slotKey(villain, player)
+  ) {
+    selectedAssignment = undefined;
+    renderResults(currentSolution, currentLocks);
+    return;
+  }
+  applySwap(selectedAssignment, target);
+}
+
 function renderResults(assignments, locks) {
   const lockedSlots = new Set(
-    locks.map(({ villain, player }) => `${villain}\0${player}`),
+    locks.map(({ villain, player }) => slotKey(villain, player)),
   );
   const table = document.createElement("table");
   const header = document.createElement("tr");
@@ -203,12 +312,64 @@ function renderResults(assignments, locks) {
     row.append(villain);
     for (const [player, choice] of Object.entries(assignment.players)) {
       const cell = document.createElement("td");
-      cell.textContent = `${choice.hero} — ${choice.aspect}`;
-      if (lockedSlots.has(`${assignment.villain}\0${player}`)) {
+      const hero = document.createElement("span");
+      hero.textContent = choice.hero;
+      const aspect = document.createElement("span");
+      aspect.className = `aspect-label ${aspectColorClass(choice.aspect)}`;
+      aspect.textContent = choice.aspect;
+      const key = slotKey(assignment.villain, player);
+      if (lockedSlots.has(key)) {
+        cell.className = "locked-assignment";
+        cell.append(hero, " — ", aspect);
         const badge = document.createElement("span");
         badge.className = "lock-badge";
         badge.textContent = "Locked";
         cell.append(document.createElement("br"), badge);
+      } else {
+        const control = document.createElement("button");
+        const isSelected =
+          selectedAssignment &&
+          slotKey(selectedAssignment.villain, selectedAssignment.player) ===
+            key;
+        control.type = "button";
+        control.className = `assignment-swap-control${isSelected ? " is-selected" : ""}`;
+        control.draggable = true;
+        control.setAttribute("aria-pressed", String(Boolean(isSelected)));
+        control.setAttribute(
+          "aria-label",
+          isSelected
+            ? `${choice.hero}, ${choice.aspect} for ${player} against ${assignment.villain}; selected as swap source. Select another assignment to swap.`
+            : `Select ${choice.hero}, ${choice.aspect} for ${player} against ${assignment.villain} to swap.`,
+        );
+        control.append(hero, " — ", aspect);
+        control.addEventListener("click", () =>
+          selectOrSwap(assignment.villain, player),
+        );
+        control.addEventListener("dragstart", (event) => {
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", key);
+        });
+        control.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        });
+        control.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const [sourceVillain, sourcePlayer] = event.dataTransfer
+            .getData("text/plain")
+            .split("\0");
+          if (
+            sourceVillain &&
+            sourcePlayer &&
+            slotKey(sourceVillain, sourcePlayer) !== key
+          ) {
+            applySwap(
+              { villain: sourceVillain, player: sourcePlayer },
+              { villain: assignment.villain, player },
+            );
+          }
+        });
+        cell.append(control);
       }
       row.append(cell);
     }
@@ -218,7 +379,11 @@ function renderResults(assignments, locks) {
 
   const heading = document.createElement("h2");
   heading.textContent = `Solution (${assignments.length} scenarios)`;
-  results.replaceChildren(heading, table);
+  const instructions = document.createElement("p");
+  instructions.className = "swap-instructions";
+  instructions.textContent =
+    "Swap assignments: drag one assignment onto another, or select an assignment and then select its swap target. Locked assignments cannot be moved or selected.";
+  results.replaceChildren(heading, instructions, table);
   results.hidden = false;
 }
 
@@ -283,7 +448,11 @@ async function generateSolution(randomize) {
           : "Valid solution generated.",
       },
     ]);
-    renderResults(assignments, locks);
+    currentCatalog = catalog;
+    currentLocks = locks;
+    currentSolution = assignments;
+    selectedAssignment = undefined;
+    renderResults(currentSolution, currentLocks);
   } catch (error) {
     showMessages([
       ...warnings.map((text) => ({ type: "warning", text })),
