@@ -62,28 +62,42 @@ jobs:
               return;
             }
 
-            const { repository } = await github.graphql(
-              `query($owner: String!, $repo: String!, $number: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $number) {
-                    reviewThreads(first: 100) {
-                      nodes {
-                        isResolved
+            let cursor = null;
+            do {
+              const { repository } = await github.graphql(
+                `query(
+                  $owner: String!
+                  $repo: String!
+                  $number: Int!
+                  $cursor: String
+                ) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) {
+                      reviewThreads(first: 100, after: $cursor) {
+                        nodes {
+                          isResolved
+                        }
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
                       }
                     }
                   }
-                }
-              }`,
-              {
-                owner,
-                repo,
-                number: context.issue.number,
-              },
-            );
-            if (repository.pullRequest.reviewThreads.nodes.some(
-              (thread) => !thread.isResolved,
-            )) {
-              core.setFailed(
-                "Resolve every review thread before requesting auto-merge.",
+                }`,
+                {
+                  owner,
+                  repo,
+                  number: context.issue.number,
+                  cursor,
+                },
               );
-            }
+              const { nodes, pageInfo } = repository.pullRequest.reviewThreads;
+              if (nodes.some((thread) => !thread.isResolved)) {
+                core.setFailed(
+                  "Resolve every review thread before requesting auto-merge.",
+                );
+                return;
+              }
+              cursor = pageInfo.hasNextPage ? pageInfo.endCursor : null;
+            } while (cursor);

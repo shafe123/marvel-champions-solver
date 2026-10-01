@@ -33,6 +33,10 @@ Open `http://localhost:8000`. Run `npm run test:web` to validate the full browse
 
 The deployment workflow publishes `dist/` to GitHub Pages whenever `main` changes.
 
+## Pull request review gate
+
+Pull requests must pass validation and the review gate before auto-merge. The gate waits for the current-head Copilot review to complete successfully, then paginates all review threads and fails until every thread is resolved.
+
 ## Quality checks
 
 The pull-request validation workflow enforces formatting, linting, browser tests, a static build, and Python tests. Run the same checks locally with:
