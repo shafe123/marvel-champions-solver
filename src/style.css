@@ -168,8 +168,8 @@ select:focus {
   text-align: left;
   width: 100%;
 }
-.assignment-swap-control:hover,
-.assignment-swap-control:focus-visible {
+button.assignment-swap-control:hover:not(:disabled),
+button.assignment-swap-control:focus-visible {
   background: #263244;
   border-color: #f9bd40;
   outline: 2px solid #f9bd4055;

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { aspectColorClass, aspectColors } from "../src/aspect-colors.js";
 import { parseNames } from "../src/catalog-input.js";
 import { validateLocks } from "../src/locks.js";
+import { restoreSwapFocus } from "../src/swap-focus.js";
 
 const expectedAspectColors = {
   Aggression: "aggression",
@@ -21,6 +22,47 @@ for (const [aspect, color] of Object.entries(expectedAspectColors)) {
 if (aspectColorClass("Custom aspect") !== "") {
   throw new Error(
     "Unknown aspects must retain the default accessible styling.",
+  );
+}
+
+function swapControl(villain, player) {
+  return {
+    dataset: { villain, player },
+    focused: false,
+    focus() {
+      this.focused = true;
+    },
+  };
+}
+
+const swapSource = swapControl("Villain A", "Player 1");
+const otherSwapControl = swapControl("Villain A", "Player 2");
+const swapContainer = {
+  querySelectorAll(selector) {
+    if (selector !== ".assignment-swap-control") {
+      throw new Error(`Unexpected selector: ${selector}`);
+    }
+    return [otherSwapControl, swapSource];
+  },
+};
+if (
+  !restoreSwapFocus(swapContainer, {
+    villain: "Villain A",
+    player: "Player 1",
+  }) ||
+  !swapSource.focused ||
+  otherSwapControl.focused
+) {
+  throw new Error("The replacement selected swap control must receive focus.");
+}
+if (
+  restoreSwapFocus(swapContainer, {
+    villain: "Villain B",
+    player: "Locked Player",
+  })
+) {
+  throw new Error(
+    "Focus restoration must not target a missing locked control.",
   );
 }
 
