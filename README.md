@@ -6,7 +6,7 @@ This project includes a Python command-line solver and a static web application.
 - Each hero-aspect pairing is used at most once across every player and scenario.
 - Players facing the same scenario use different heroes.
 - Players facing the same scenario use different aspects.
-- Each player's uses of any two aspects differ by at most one across the schedule.
+- For each player independently, the uses of any two aspects differ by at most one across the schedule.
 
 The default [`catalog.json`](catalog.json) contains the approved 69 heroes, 5 aspects, 4 players, and 65 villain scenarios.
 
