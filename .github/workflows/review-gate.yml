@@ -28,6 +28,7 @@ jobs:
             const reviewCheck = "copilot-pull-request-reviewer";
             const sleep = (milliseconds) =>
               new Promise((resolve) => setTimeout(resolve, milliseconds));
+            const threadDeadline = Date.now() + 11 * 60 * 1000;
 
             let reviewCompleted = false;
             for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -62,8 +63,11 @@ jobs:
               return;
             }
 
-            let cursor = null;
             do {
+              let cursor = null;
+              let unresolvedThreadFound = false;
+
+              do {
               const { repository } = await github.graphql(
                 `query(
                   $owner: String!
@@ -94,10 +98,18 @@ jobs:
               );
               const { nodes, pageInfo } = repository.pullRequest.reviewThreads;
               if (nodes.some((thread) => !thread.isResolved)) {
-                core.setFailed(
-                  "Resolve every review thread before requesting auto-merge.",
-                );
-                return;
+                unresolvedThreadFound = true;
+                break;
               }
               cursor = pageInfo.hasNextPage ? pageInfo.endCursor : null;
-            } while (cursor);
+              } while (cursor);
+
+              if (!unresolvedThreadFound) {
+                return;
+              }
+              await sleep(10000);
+            } while (Date.now() < threadDeadline);
+
+            core.setFailed(
+              "Timed out waiting for every review thread to be resolved.",
+            );

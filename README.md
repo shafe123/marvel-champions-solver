@@ -35,7 +35,7 @@ The deployment workflow publishes `dist/` to GitHub Pages whenever `main` change
 
 ## Pull request review gate
 
-Pull requests must pass validation and the review gate before auto-merge. The gate waits for the current-head Copilot review to complete successfully, then paginates all review threads and fails until every thread is resolved.
+Pull requests must pass validation and the review gate before auto-merge. The gate waits for the current-head Copilot review to complete successfully, then polls every paginated review thread until each is resolved or the gate times out.
 
 ## Quality checks
 
