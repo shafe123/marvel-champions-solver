@@ -3,6 +3,7 @@ import { aspectColorClass } from "./aspect-colors.js";
 import { parseNames } from "./catalog-input.js";
 import { validateLocks } from "./locks.js";
 import { validateSchedule } from "./schedule-validation.js";
+import { restoreSwapFocus } from "./swap-focus.js";
 import "./style.css";
 
 const fields = {
@@ -271,6 +272,7 @@ function selectOrSwap(villain, player) {
   if (!selectedAssignment) {
     selectedAssignment = target;
     renderResults(currentSolution, currentLocks);
+    restoreSwapFocus(results, selectedAssignment);
     return;
   }
   if (
@@ -333,6 +335,8 @@ function renderResults(assignments, locks) {
             key;
         control.type = "button";
         control.className = `assignment-swap-control${isSelected ? " is-selected" : ""}`;
+        control.dataset.villain = assignment.villain;
+        control.dataset.player = player;
         control.draggable = true;
         control.setAttribute("aria-pressed", String(Boolean(isSelected)));
         control.setAttribute(

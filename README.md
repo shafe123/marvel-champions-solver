@@ -29,7 +29,7 @@ npm run build
 cd dist && python -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Run `npm run test:web` to validate the full browser solver model and schedule-validation rules against the default catalog.
+Open `http://localhost:8000`. Run `npm run test:web` to validate the full browser solver model, schedule-validation rules, and critical interactive styling against the default catalog.
 
 The deployment workflow publishes `dist/` to GitHub Pages whenever `main` changes.
 
