@@ -1,0 +1,89 @@
+name: Review gate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  checks: read
+  pull-requests: read
+
+concurrency:
+  group: review-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review-gate:
+    name: review-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const reviewCheck = "copilot-pull-request-reviewer";
+            const sleep = (milliseconds) =>
+              new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+            let reviewCompleted = false;
+            for (let attempt = 0; attempt < 60; attempt += 1) {
+              const { data } = await github.rest.checks.listForRef({
+                owner,
+                repo,
+                ref: process.env.HEAD_SHA,
+                check_name: reviewCheck,
+              });
+              const completed = data.check_runs.find(
+                (check) =>
+                  check.name === reviewCheck &&
+                  check.status === "completed",
+              );
+
+              if (completed?.conclusion === "success") {
+                reviewCompleted = true;
+                break;
+              }
+              if (completed) {
+                core.setFailed(
+                  `Copilot review did not complete successfully: ${completed.conclusion}.`,
+                );
+                return;
+              }
+              await sleep(10000);
+            }
+            if (!reviewCompleted) {
+              core.setFailed(
+                "Timed out waiting for the Copilot review to complete.",
+              );
+              return;
+            }
+
+            const { repository } = await github.graphql(
+              `query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequest(number: $number) {
+                    reviewThreads(first: 100) {
+                      nodes {
+                        isResolved
+                      }
+                    }
+                  }
+                }
+              }`,
+              {
+                owner,
+                repo,
+                number: context.issue.number,
+              },
+            );
+            if (repository.pullRequest.reviewThreads.nodes.some(
+              (thread) => !thread.isResolved,
+            )) {
+              core.setFailed(
+                "Resolve every review thread before requesting auto-merge.",
+              );
+            }
