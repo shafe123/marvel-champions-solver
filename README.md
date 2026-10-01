@@ -6,6 +6,7 @@ This project includes a Python command-line solver and a static web application.
 - Each hero-aspect pairing is used at most once across every player and scenario.
 - Players facing the same scenario use different heroes.
 - Players facing the same scenario use different aspects.
+- Each player's uses of any two aspects differ by at most one across the schedule.
 
 The default [`catalog.json`](catalog.json) contains the approved 69 heroes, 5 aspects, 4 players, and 65 villain scenarios.
 
@@ -15,7 +16,7 @@ The GitHub Pages application runs the solver privately in the browser using [GLP
 
 ### Locking assignments
 
-Use **Add locked assignment** to add a row to the manual-assignment table, then choose a villain, player, hero, and aspect. Each valid lock becomes a fixed assignment in the browser optimization model while the solver fills the remaining slots. The table has labeled columns and accessible controls, and rows can be removed with **Remove**. Locks are marked in the solution table. Before solving, the app identifies unknown names, incomplete locks, duplicate player/scenario slots, a player reusing a hero, globally reused hero–aspect pairs, and duplicate heroes or aspects within a scenario.
+Use **Add locked assignment** to add a row to the manual-assignment table, then choose a villain, player, hero, and aspect. Each valid lock becomes a fixed assignment in the browser optimization model while the solver fills the remaining slots. The table has labeled columns and accessible controls, and rows can be removed with **Remove**. Locks are marked in the solution table. Before solving, the app identifies unknown names, incomplete locks, duplicate player/scenario slots, a player reusing a hero, globally reused hero–aspect pairs, duplicate heroes or aspects within a scenario, and locks that already exceed a player's balanced aspect allocation.
 
 The approved aspects have high-contrast color labels in manual assignment controls and solution results: Aggression (red), Justice (yellow), Protection (green), Leadership (blue), and 'Pool (pink). Aspect names are always shown alongside their colors.
 

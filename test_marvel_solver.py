@@ -7,7 +7,7 @@ class SolverTests(unittest.TestCase):
     def test_assignments_honor_all_constraints(self) -> None:
         catalog = Catalog(
             players=("A", "B"),
-            heroes=("Hero 1", "Hero 2", "Hero 3"),
+            heroes=("Hero 1", "Hero 2", "Hero 3", "Hero 4"),
             aspects=("Aggression", "Justice"),
             villains=("Villain 1", "Villain 2", "Villain 3"),
         )
@@ -15,6 +15,10 @@ class SolverTests(unittest.TestCase):
         assignments = solve(catalog, time_limit_seconds=5, random_seed=1)
 
         player_heroes = {player: set() for player in catalog.players}
+        player_aspects = {
+            player: {aspect: 0 for aspect in catalog.aspects}
+            for player in catalog.players
+        }
         hero_aspects = set()
         for scenario in assignments:
             scenario_heroes = set()
@@ -28,6 +32,12 @@ class SolverTests(unittest.TestCase):
                 hero_aspects.add((choice["hero"], choice["aspect"]))
                 scenario_heroes.add(choice["hero"])
                 scenario_aspects.add(choice["aspect"])
+                player_aspects[player][choice["aspect"]] += 1
+
+        for aspect_counts in player_aspects.values():
+            self.assertLessEqual(
+                max(aspect_counts.values()) - min(aspect_counts.values()), 1
+            )
 
     def test_feasibility_rejects_too_many_scenarios(self) -> None:
         catalog = Catalog(

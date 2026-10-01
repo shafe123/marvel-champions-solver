@@ -129,6 +129,12 @@ function validate(assignments) {
   const playerHeroes = new Map(
     catalog.players.map((player) => [player, new Set()]),
   );
+  const playerAspects = new Map(
+    catalog.players.map((player) => [
+      player,
+      new Map(catalog.aspects.map((aspect) => [aspect, 0])),
+    ]),
+  );
   const heroAspects = new Set();
   for (const assignment of assignments) {
     const scenarioHeroes = new Set();
@@ -151,9 +157,17 @@ function validate(assignments) {
         );
       }
       playerHeroes.get(player).add(choice.hero);
+      const aspectCounts = playerAspects.get(player);
+      aspectCounts.set(choice.aspect, aspectCounts.get(choice.aspect) + 1);
       heroAspects.add(`${choice.hero}\0${choice.aspect}`);
       scenarioHeroes.add(choice.hero);
       scenarioAspects.add(choice.aspect);
+    }
+  }
+  for (const [player, aspectCounts] of playerAspects) {
+    const counts = [...aspectCounts.values()];
+    if (Math.max(...counts) - Math.min(...counts) > 1) {
+      throw new Error(`${player} did not receive balanced aspect assignments.`);
     }
   }
 }
@@ -294,6 +308,34 @@ if (!infeasibleLockMessage.includes("cannot be completed")) {
   throw new Error(
     "Browser worker did not explain an infeasible lock combination.",
   );
+}
+
+const unbalancedLockErrors = validateLocks(infeasibleCatalog, [
+  { villain: "V0", player: "P0", hero: "H0", aspect: "A0" },
+  { villain: "V1", player: "P0", hero: "H1", aspect: "A0" },
+  { villain: "V2", player: "P0", hero: "H2", aspect: "A0" },
+]).join("\n");
+if (!unbalancedLockErrors.includes("aspects must be balanced")) {
+  throw new Error("Lock validation did not reject unbalanced aspect locks.");
+}
+
+const lowerBalanceLockCatalog = {
+  players: ["P0"],
+  heroes: ["H0", "H1", "H2", "H3", "H4", "H5"],
+  aspects: ["A0", "A1", "A2", "A3", "A4"],
+  villains: ["V0", "V1", "V2", "V3", "V4", "V5"],
+};
+const lowerBalanceLockErrors = validateLocks(
+  lowerBalanceLockCatalog,
+  lowerBalanceLockCatalog.villains.map((villain, index) => ({
+    villain,
+    player: "P0",
+    hero: lowerBalanceLockCatalog.heroes[index],
+    aspect: lowerBalanceLockCatalog.aspects[Math.floor(index / 2)],
+  })),
+).join("\n");
+if (!lowerBalanceLockErrors.includes("leave too few scenarios")) {
+  throw new Error("Lock validation did not enforce minimum aspect uses.");
 }
 
 const incompleteAndUnknownErrors = validateLocks(catalog, [

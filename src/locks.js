@@ -13,6 +13,14 @@ export function validateLocks(catalog, locks = []) {
   const heroAspects = new Map();
   const scenarioHeroes = new Map();
   const scenarioAspects = new Map();
+  const playerAspects = new Map();
+  const playerLockedSlots = new Map();
+  const minAspectUses = Math.floor(
+    catalog.villains.length / catalog.aspects.length,
+  );
+  const maxAspectUses = Math.ceil(
+    catalog.villains.length / catalog.aspects.length,
+  );
 
   locks.forEach((lock, index) => {
     const label = describeLock(index);
@@ -87,7 +95,44 @@ export function validateLocks(catalog, locks = []) {
     } else {
       scenarioAspects.set(scenarioAspectKey, lock);
     }
+
+    if (
+      catalog.players.includes(lock.player) &&
+      catalog.aspects.includes(lock.aspect)
+    ) {
+      playerLockedSlots.set(
+        lock.player,
+        (playerLockedSlots.get(lock.player) ?? 0) + 1,
+      );
+      const playerAspectKey = `${lock.player}\0${lock.aspect}`;
+      const count = (playerAspects.get(playerAspectKey) ?? 0) + 1;
+      playerAspects.set(playerAspectKey, count);
+      if (count > maxAspectUses) {
+        errors.push(
+          `${label}: ${lock.player} cannot use ${lock.aspect} more than ${maxAspectUses} times; aspects must be balanced across the schedule.`,
+        );
+      }
+    }
   });
+
+  for (const player of catalog.players) {
+    const missingAspectUses = catalog.aspects.reduce(
+      (total, aspect) =>
+        total +
+        Math.max(
+          0,
+          minAspectUses - (playerAspects.get(`${player}\0${aspect}`) ?? 0),
+        ),
+      0,
+    );
+    const unlockedSlots =
+      catalog.villains.length - (playerLockedSlots.get(player) ?? 0);
+    if (missingAspectUses > unlockedSlots) {
+      errors.push(
+        `${player}'s locks leave too few scenarios to balance every aspect across the schedule.`,
+      );
+    }
+  }
 
   return errors;
 }
